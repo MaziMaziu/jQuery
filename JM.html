@@ -6,10 +6,38 @@
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
+    <!-- Dodajemy bibliotekę touch-punch aby sortowanie działało również na urządzeniach dotykowych -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
     <title>Jakub Mazela</title>
+    <style>
+        /* Dodajemy styl dla sortowanych zakładek */
+        #tabs-accordion .ui-tabs-nav {
+            cursor: move;
+        }
+        
+        /* Zmiana kursora na "grab" dla poszczególnych zakładek */
+        #tabs-accordion .ui-tabs-nav li {
+            cursor: grab;
+        }
+        
+        /* Zmiana kursora na "grabbing" podczas przeciągania */
+        #tabs-accordion .ui-tabs-nav li.ui-sortable-helper {
+            cursor: grabbing;
+        }
+    </style>
     <script>
         $(function() {
-            $("#accordion").accordion();
+            // Zmodyfikowana animacja dla widgetu Accordion
+            $("#accordion").accordion({
+                animate: {
+                    duration: 500,
+                    easing: "easeInOutElastic",
+                    down: {
+                        easing: "easeOutBounce",
+                        duration: 800
+                    }
+                }
+            });
 
             $(".articleBody").hide().fadeIn(1000);
 
@@ -34,8 +62,20 @@
                 });
             });
 
-            $("#accordion").accordion();
-            $("#tabs-accordion").tabs();
+            // Inicjalizacja widgetu Tabs z przełączaniem po najechaniu kursorem
+            $("#tabs-accordion").tabs({
+                show: { effect: "slide", duration: 800 },
+                event: "mouseover"
+            });
+            
+            // Dodajemy możliwość sortowania zakładek
+            $("#tabs-accordion ul").sortable({
+                axis: "x",  // ograniczamy sortowanie tylko w poziomie
+                stop: function() {
+                    $("#tabs-accordion").tabs("refresh");
+                }
+            });
+
             $("#dialog-form").dialog({ 
                 autoOpen: false, 
                 modal: true, 
@@ -117,6 +157,31 @@
                     $('header').removeClass('scrolled').css('background', '#2c3e50');
                 }
             });
+
+            // Dialog for adding a new tab
+            $("#dialog-add-tab").dialog({
+                autoOpen: false,
+                modal: true,
+                buttons: {
+                    "Add Tab": function() {
+                        var tabTitle = $("#tab-title").val();
+                        var tabContent = $("#tab-content").val();
+                        if (tabTitle && tabContent) {
+                            var newTabIndex = $("#tabs-accordion ul li").length + 1;
+                            $("<li><a href='#tab-" + newTabIndex + "'>" + tabTitle + "</a></li>").appendTo("#tabs-accordion ul");
+                            $("<div id='tab-" + newTabIndex + "'>" + tabContent + "</div>").appendTo("#tabs-accordion");
+                            $("#tabs-accordion").tabs("refresh");
+                            $(this).dialog("close");
+                        } else {
+                            alert("Both title and content are required.");
+                        }
+                    }
+                }
+            });
+
+            $("#add-tab").click(function() {
+                $("#dialog-add-tab").dialog("open");
+            });
         });
 
         function validateForm() {
@@ -171,6 +236,7 @@
                             <li><a href="#tabs-accordion-1">Tabela</a></li>
                             <li><a href="#tabs-accordion-2">Sterowanie</a></li>
                         </ul>
+                        <button id="add-tab">Add New Tab</button> <!-- Przycisk obok widgetu Tabs -->
                         <div id="tabs-accordion-1">
                             <table id="data-table" border="1">
                                 <thead>
@@ -213,6 +279,11 @@
                     <input type="radio" id="radio3" name="radio"><label for="radio3">Opcja 3</label>
                 </div>
                 <button id="save-row">Dodaj</button>
+            </div>
+
+            <div id="dialog-add-tab" title="Add New Tab">
+                <label>Tab Title: <input type="text" id="tab-title" class="form-input" required></label>
+                <label>Tab Content: <textarea id="tab-content" class="form-input" required></textarea></label>
             </div>
         </div>
     </div>

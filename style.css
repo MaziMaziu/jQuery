@@ -248,3 +248,17 @@ footer {
     margin-bottom: 20px;
 }
 
+/* Dodajemy styl dla sortowanych zakładek */
+#tabs-accordion .ui-tabs-nav {
+    cursor: move;
+}
+
+/* Zmiana kursora na "grab" dla poszczególnych zakładek */
+#tabs-accordion .ui-tabs-nav li {
+    cursor: grab;
+}
+
+/* Zmiana kursora na "grabbing" podczas przeciągania */
+#tabs-accordion .ui-tabs-nav li.ui-sortable-helper {
+    cursor: grabbing;
+}
