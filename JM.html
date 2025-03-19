@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pl-PL">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
+    <title>Jakub Mazela</title>
+    <script>
+        $(function() {
+            $("#accordion").accordion();
+
+            $(".articleBody").hide().fadeIn(1000);
+
+            $(".articleBody").hover(
+                function() { $(this).css({"background-color": "#f0f0f0", "transform": "scale(1.05)"}); },
+                function() { $(this).css({"background-color": "", "transform": "scale(1)"}); }
+            );
+
+            $("#mainNavMenu li a").click(function(e) {
+                e.preventDefault();
+                $("#mainRight").toggle("slow");
+            });
+
+            $("#toggleLeftPanel").click(function() {
+                $("#mainLeft").animate({ width: "toggle" });
+            });
+
+            $("#filterMenu").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#mainNavMenu li").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            $("#accordion").accordion();
+            $("#tabs-accordion").tabs();
+            $("#dialog-form").dialog({ 
+                autoOpen: false, 
+                modal: true, 
+                hide: { effect: "explode", duration: 500 },
+                show: { effect: "explode", duration: 500 }
+            });
+            
+            $("#add-row").click(function() {
+                $("#dialog-form").dialog("open");
+            });
+            
+            $("#save-row").click(function() {
+                // Perform validation
+                if (validateForm()) {
+                    var selectedOption = $("input[name='radio']:checked").next("label").text();
+                    var newRow = "<tr><td>" + $("#col1").val() + "</td><td>" + $("#col2").val() + "</td><td>" + $("#col3").val() + "</td><td>" + selectedOption + "</td></tr>";
+                    $("#data-table tbody").append(newRow);
+                    $("#dialog-form").dialog("close");
+                }
+            });
+
+            $("#form-input").on("input", function() {
+                if ($(this).val() === "") {
+                    $(this).css("background-color", "red");
+                } else {
+                    $(this).css("background-color", "green");
+                }
+            });
+
+            $("#slider-temp").slider({
+                orientation: "vertical",
+                range: "min",
+                min: 15,
+                max: 25,
+                slide: function(event, ui) {
+                    var tempColor = `rgb(${Math.round(255 * (ui.value - 15) / 10)}, 0, ${Math.round(255 * (25 - ui.value) / 10)})`;
+                    $("#slider-temp .ui-slider-handle").css("background-color", tempColor);
+                }
+            });
+
+            $("#slider-humidity").slider({
+                orientation: "vertical",
+                range: "min",
+                min: 0,
+                max: 100,
+                slide: function(event, ui) {
+                    var humidityColor = `rgb(0, 0, ${Math.round(255 * ui.value / 100)})`;
+                    $("#slider-humidity .ui-slider-handle").css("background-color", humidityColor);
+                }
+            });
+
+            $("#slider-air").slider({
+                orientation: "vertical",
+                range: "min",
+                min: 0,
+                max: 500,
+                slide: function(event, ui) {
+                    var airQualityColors = [
+                        "rgb(0, 228, 0)",     // 0-50: Good
+                        "rgb(255, 255, 0)",   // 51-100: Moderate
+                        "rgb(255, 126, 0)",   // 101-150: Unhealthy for Sensitive Groups
+                        "rgb(255, 0, 0)",     // 151-200: Unhealthy
+                        "rgb(143, 63, 151)",  // 201-300: Very Unhealthy
+                        "rgb(126, 0, 35)"     // 301-500: Hazardous
+                    ];
+                    var colorIndex = Math.floor(ui.value / 100);
+                    $("#slider-air .ui-slider-handle").css("background-color", airQualityColors[colorIndex]);
+                }
+            });
+
+            // Initialize controlgroup
+            $("#radio-group").controlgroup();
+
+            // Animate header
+            $(window).scroll(function() {
+                if ($(this).scrollTop() > 50) {
+                    $('header').addClass('scrolled').css('background', 'linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,121,113,1) 35%, rgba(0,212,255,1) 100%)');
+                } else {
+                    $('header').removeClass('scrolled').css('background', '#2c3e50');
+                }
+            });
+        });
+
+        function validateForm() {
+            var isValid = true;
+            $(".form-input").each(function() {
+                if ($(this).val() === "") {
+                    isValid = false;
+                    $(this).css("background-color", "red");
+                } else {
+                    $(this).css("background-color", "green");
+                }
+            });
+            if (!$("input[name='radio']:checked").val()) {
+                isValid = false;
+                alert("Please select an option");
+            }
+            return isValid;
+        }
+    </script>
+</head>
+<body>
+    <header>Head</header>
+
+    <button id="toggleLeftPanel">Toggle Left Panel</button>
+
+    <div id="main">
+        <div id="mainLeft">
+            <input type="text" id="filterMenu" placeholder="Szukaj w menu...">
+            <nav id="mainNavMenu"> Lista:
+                <ul>
+                    <li><a href="">1</a></li>
+                    <li><a href="">2</a></li>
+                    <li><a href="">3</a></li>
+                    <li><a href="">4</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div id="mainRight">
+            
+            <article class="articleBody"><p class="label">temat</p>
+                <p class="textBody">1234</p>
+            </article>
+            <article class="articleBody"><p class="label">temat2</p>
+                <p class="textBody">4321</p>
+            </article>
+
+            <div id="accordion">
+                <h3>Część 1</h3>
+                <div>
+                    <div id="tabs-accordion">
+                        <ul>
+                            <li><a href="#tabs-accordion-1">Tabela</a></li>
+                            <li><a href="#tabs-accordion-2">Sterowanie</a></li>
+                        </ul>
+                        <div id="tabs-accordion-1">
+                            <table id="data-table" border="1">
+                                <thead>
+                                    <tr><th>Kolumna 1</th><th>Kolumna 2</th><th>Kolumna 3</th><th>Opcja</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                            <button id="add-row">Dodaj nowy wiersz</button>
+                        </div>
+                        <div id="tabs-accordion-2">
+                            <div id="slider-container">
+                                <div>Temperatura: <div id="slider-temp"></div></div>
+                                <div>Wilgotność: <div id="slider-humidity"></div></div>
+                                <div>Jakość powietrza: <div id="slider-air"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h3>Część 2</h3>
+                <div>
+                    <p>Treść dla części 2.</p>
+                </div>
+                <h3>Część 3</h3>
+                <div>
+                    <p>Treść dla części 3.</p>
+                </div>
+                <h3>Część 4</h3>
+                <div>
+                    <p>Treść dla części 4.</p>
+                </div>
+            </div>
+            
+            <div id="dialog-form" title="Dodaj nowy wiersz">
+                <label>Kolumna 1: <input type="text" id="col1" class="form-input" required></label>
+                <label>Kolumna 2: <input type="text" id="col2" class="form-input" required></label>
+                <label>Kolumna 3: <input type="text" id="col3" class="form-input" required></label>
+                <div id="radio-group">
+                    <input type="radio" id="radio1" name="radio" required><label for="radio1">Opcja 1</label>
+                    <input type="radio" id="radio2" name="radio"><label for="radio2">Opcja 2</label>
+                    <input type="radio" id="radio3" name="radio"><label for="radio3">Opcja 3</label>
+                </div>
+                <button id="save-row">Dodaj</button>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div class="footer-content">
+            <div class="social-media">
+                <a href="https://facebook.com" class="social-icon"><img src="https://img.icons8.com/fluent/48/000000/facebook-new.png"/></a>
+                <a href="https://twitter.com" class="social-icon"><img src="https://img.icons8.com/fluent/48/000000/twitter.png"/></a>
+                <a href="https://linkedin.com" class="social-icon"><img src="https://img.icons8.com/fluent/48/000000/linkedin.png"/></a>
+                <a href="https://instagram.com" class="social-icon"><img src="https://img.icons8.com/fluent/48/000000/instagram-new.png"/></a>
+            </div>
+            <div class="contact-info">
+                <p>Kontakt: info@example.com</p>
+                <p>Tel: +48 123 456 789</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
