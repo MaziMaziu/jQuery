@@ -24,6 +24,35 @@
         #tabs-accordion .ui-tabs-nav li.ui-sortable-helper {
             cursor: grabbing;
         }
+        
+        /* Style do animacji formularzy */
+        #dialog-form input[type="text"], 
+        #dialog-form textarea {
+            border: 1px solid #ccc;
+            transition: border-color 0.3s, background-color 0.3s;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        /* Styl dla grupy radiobuttons */
+        #radio-group {
+            padding: 10px;
+            border-radius: 4px;
+            transition: border-color 0.7s, background-color 0.7s;
+            margin: 10px 0;
+        }
+
+        /* Styl dla błędnego pola */
+        .input-error {
+            border: 2px solid red !important;
+            background-color: #FFE0E0 !important;
+        }
+
+        /* Styl dla poprawnego pola */
+        .input-success {
+            border: 2px solid green !important;
+            background-color: #E0FFE0 !important;
+        }
     </style>
     <script>
         $(function() {
@@ -83,7 +112,9 @@
                 show: { effect: "explode", duration: 500 }
             });
             
+            // Modyfikacja obsługi przycisku "Dodaj nowy wiersz"
             $("#add-row").click(function() {
+                resetFormStyles();  // Resetowanie stylów przed otwarciem okna
                 $("#dialog-form").dialog("open");
             });
             
@@ -97,11 +128,18 @@
                 }
             });
 
-            $("#form-input").on("input", function() {
+            // Dodanie nasłuchiwania zdarzeń dla pól w czasie rzeczywistym
+            $(".form-input").on("input", function() {
                 if ($(this).val() === "") {
-                    $(this).css("background-color", "red");
+                    $(this).css({
+                        "border": "2px solid red",
+                        "background-color": "#FFE0E0"
+                    });
                 } else {
-                    $(this).css("background-color", "green");
+                    $(this).stop(true).animate({
+                        borderColor: "green",
+                        backgroundColor: "#E0FFE0"
+                    }, 700);
                 }
             });
 
@@ -184,21 +222,82 @@
             });
         });
 
+        // Funkcja walidująca z animacjami
         function validateForm() {
             var isValid = true;
+            
+            // Sprawdzanie pól tekstowych
             $(".form-input").each(function() {
                 if ($(this).val() === "") {
                     isValid = false;
-                    $(this).css("background-color", "red");
+                    
+                    // Zachowanie aktualnej pozycji
+                    var position = $(this).css('position');
+                    var left = $(this).css('left');
+                    
+                    // Dodanie czerwonego obramowania z animacją
+                    $(this)
+                        .css({
+                            "border": "2px solid red",
+                            "position": "relative",
+                            "left": "0px"
+                        })
+                        // Animacja drżenia (shake)
+                        .animate({left: '-5px'}, 100)
+                        .animate({left: '5px'}, 100)
+                        .animate({left: '-5px'}, 100)
+                        .animate({left: '5px'}, 100)
+                        .animate({left: '0px'}, 100)
+                        .animate({
+                            backgroundColor: "#FFE0E0" // Jasnoczerwone tło
+                        }, 200);
+                        
                 } else {
-                    $(this).css("background-color", "green");
+                    // Animacja przejścia do koloru zielonego (0.7s)
+                    $(this).css("border", "2px solid green")
+                        .animate({
+                            backgroundColor: "#E0FFE0" // Jasnozielone tło
+                        }, 700);
                 }
             });
+            
+            // Sprawdzanie przycisków radio
             if (!$("input[name='radio']:checked").val()) {
                 isValid = false;
-                alert("Please select an option");
+                
+                // Animacja dla całej grupy radio
+                $("#radio-group")
+                    .css("border", "2px solid red")
+                    // Animacja pulsowania (2 razy)
+                    .animate({opacity: 0.5}, 300)
+                    .animate({opacity: 1}, 300)
+                    .animate({opacity: 0.5}, 300)
+                    .animate({opacity: 1}, 300);
+                    
+                alert("Proszę wybrać jedną z opcji");
+            } else {
+                $("#radio-group").css("border", "2px solid green")
+                    .animate({backgroundColor: "#E0FFE0"}, 700);
             }
+            
             return isValid;
+        }
+
+        // Funkcja resetująca style formularza przy otwarciu
+        function resetFormStyles() {
+            $(".form-input").css({
+                "border": "1px solid #ccc",
+                "background-color": "#fff"
+            });
+            
+            $("#radio-group").css({
+                "border": "none",
+                "background-color": "transparent"
+            });
+            
+            // Resetowanie wartości pól
+            $(".form-input").val("");
+            $("input[name='radio']").prop("checked", false);
         }
     </script>
 </head>
