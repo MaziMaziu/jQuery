@@ -80,10 +80,6 @@
                 $("#mainRight").toggle("slow");
             });
 
-            $("#toggleLeftPanel").click(function() {
-                $("#mainLeft").animate({ width: "toggle" });
-            });
-
             $("#filterMenu").on("keyup", function() {
                 var value = $(this).val().toLowerCase();
                 $("#mainNavMenu li").filter(function() {
@@ -220,8 +216,336 @@
             $("#add-tab").click(function() {
                 $("#dialog-add-tab").dialog("open");
             });
-        });
 
+            // Add the datepicker initialization if not already present
+            $("#datepicker").datepicker({
+                showOtherMonths: true,
+                selectOtherMonths: true,
+                dateFormat: "dd.mm.yy",
+                firstDay: 1, // Monday as first day
+                dayNamesMin: ["Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So"],
+                monthNames: ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", 
+                           "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"]
+            });
+
+            // Image cycler functionality
+            function cycleImages(){
+                var $active = $('#cycler .active');
+                var $next = ($active.next().length > 0) ? $active.next() : $('#cycler img:first');
+                $active.css('z-index', 2);
+                $next.css({
+                    'z-index': 3,
+                    'opacity': 0
+                }).addClass('active').animate({
+                    'opacity': 1
+                }, 1000, function() {
+                    $active.removeClass('active');
+                });
+            }
+            
+            // Start cycling images with 4-second interval
+            setInterval(cycleImages, 4000);
+            
+            // Draggable modules functionality
+            let customizeModeActive = false;
+
+            // Customize page layout toggle button
+            $("#customizeToggle").click(function() {
+                customizeModeActive = !customizeModeActive;
+                
+                if (customizeModeActive) {
+                    // Activate customization mode
+                    $(this).addClass("active").text("Zakończ dostosowywanie");
+                    $(".sidebox").addClass("customizable");
+                    $(".drag-handle").show();
+                    
+                    // Mark mainCenter as a no-drop zone
+                    $("#mainCenter").addClass("no-drop-zone");
+                    
+                    // Enable sortable on both panels
+                    $("#mainLeft, #mainRight").sortable({
+                        connectWith: ".panel-container",
+                        handle: ".drag-handle",
+                        placeholder: "sidebox-placeholder",
+                        tolerance: "pointer",
+                        opacity: 0.7,
+                        revert: true,
+                        start: function(e, ui) {
+                            ui.placeholder.height(ui.item.height());
+                            // Add class to indicate dragging is in progress
+                            $("body").addClass("dragging-in-progress");
+                        },
+                        stop: function(event, ui) {
+                            // Save the current arrangement to localStorage
+                            saveLayout();
+                            // Remove dragging indicator class
+                            $("body").removeClass("dragging-in-progress");
+                            // Reset highlighting
+                            $(".panel-container").removeClass("valid-target invalid-target");
+                            $(".no-drop-zone").removeClass("highlight");
+                        },
+                        over: function(event, ui) {
+                            // Highlight valid target
+                            $(this).addClass("valid-target");
+                            $(this).removeClass("invalid-target");
+                        },
+                        out: function(event, ui) {
+                            // Remove highlight when leaving
+                            $(this).removeClass("valid-target");
+                        }
+                    }).disableSelection();
+                    
+                    // Handle dragging over non-droppable areas
+                    $(document).on("mousemove.customizer", function(e) {
+                        if ($("body").hasClass("dragging-in-progress")) {
+                            const $draggedItem = $(".ui-sortable-helper");
+                            if ($draggedItem.length) {
+                                const dragX = e.pageX;
+                                const dragY = e.pageY;
+                                
+                                // Check if mouse is over the center area (no-drop zone)
+                                const $centerArea = $("#mainCenter");
+                                const centerRect = $centerArea[0].getBoundingClientRect();
+                                
+                                if (
+                                    dragX > centerRect.left && 
+                                    dragX < centerRect.right && 
+                                    dragY > centerRect.top && 
+                                    dragY < centerRect.bottom
+                                ) {
+                                    // Over invalid area
+                                    $centerArea.addClass("highlight");
+                                    $(".sidebox-placeholder").addClass("invalid");
+                                } else {
+                                    // Not over invalid area
+                                    $centerArea.removeClass("highlight");
+                                    $(".sidebox-placeholder").removeClass("invalid");
+                                }
+                            }
+                        }
+                    });
+                    
+                } else {
+                    // Deactivate customization mode
+                    $(this).removeClass("active").text("Dostosuj układ strony");
+                    $(".sidebox").removeClass("customizable");
+                    $(".drag-handle").hide();
+                    
+                    // Remove no-drop zone class
+                    $("#mainCenter").removeClass("no-drop-zone highlight");
+                    
+                    // Disable sortable
+                    $("#mainLeft, #mainRight").sortable("destroy");
+                    
+                    // Remove event handler
+                    $(document).off("mousemove.customizer");
+                }
+            });
+
+            // Function to save layout to localStorage
+            function saveLayout() {
+                let layout = {
+                    left: [],
+                    right: []
+                };
+                
+                // Get left panel module IDs in order
+                $("#mainLeft .sidebox").each(function() {
+                    layout.left.push($(this).attr("id"));
+                });
+                
+                // Get right panel module IDs in order
+                $("#mainRight .sidebox").each(function() {
+                    layout.right.push($(this).attr("id"));
+                });
+                
+                // Save to localStorage
+                localStorage.setItem("pageLayout", JSON.stringify(layout));
+            }
+            
+            // Function to restore layout from localStorage
+            function restoreLayout() {
+                const savedLayout = localStorage.getItem("pageLayout");
+                
+                if (savedLayout) {
+                    const layout = JSON.parse(savedLayout);
+                    
+                    // Restore left panel
+                    layout.left.forEach(moduleId => {
+                        const module = $(`#${moduleId}`);
+                        if (module.length) {
+                            $("#mainLeft").append(module);
+                        }
+                    });
+                    
+                    // Restore right panel
+                    layout.right.forEach(moduleId => {
+                        const module = $(`#${moduleId}`);
+                        if (module.length) {
+                            $("#mainRight").append(module);
+                        }
+                    });
+                }
+            }
+            
+            // Try to restore layout on page load
+            if (localStorage.getItem("pageLayout")) {
+                restoreLayout();
+            }
+            
+            // Event hovering effects
+            $(".event-item").hover(
+                function() { $(this).css({"background-color": "#f8f9fa", "border-radius": "4px"}); },
+                function() { $(this).css({"background-color": "", "border-radius": ""}); }
+            );
+            
+            // News hovering effects
+            $(".news-item").hover(
+                function() { $(this).css({"background-color": "#f8f9fa", "border-radius": "4px"}); },
+                function() { $(this).css({"background-color": "", "border-radius": ""}); }
+            );
+            
+            // Rating hovering effects
+            $(".rating-item").hover(
+                function() { $(this).css({"background-color": "#f8f9fa", "border-radius": "4px"}); },
+                function() { $(this).css({"background-color": "", "border-radius": ""}); }
+            );
+
+            // Draggable modules in central area
+            $("#central-modules").sortable({
+                containment: "#central-modules",
+                handle: ".module-drag-handle",
+                placeholder: "module-placeholder",
+                opacity: 0.7,
+                cursor: "move"
+            }).disableSelection();
+            
+            // Handle removing modules with different animations
+            $(document).on("click", ".module-remove-btn", function() {
+                const $module = $(this).closest(".draggable-module");
+                const animationType = $(this).data("animation");
+                
+                switch(animationType) {
+                    case "fadeOut":
+                        $module.animate({
+                            opacity: 0
+                        }, 600, function() {
+                            $(this).animate({
+                                height: 0,
+                                marginBottom: 0,
+                                paddingTop: 0,
+                                paddingBottom: 0
+                            }, 400, function() {
+                                $(this).remove();
+                            });
+                        });
+                        break;
+                        
+                    case "slideAway":
+                        $module.animate({
+                            opacity: 0.5,
+                            marginLeft: "100%"
+                        }, 600, "easeOutExpo", function() {
+                            $(this).animate({
+                                height: 0,
+                                marginBottom: 0,
+                                paddingTop: 0,
+                                paddingBottom: 0
+                            }, 300, function() {
+                                $(this).remove();
+                            });
+                        });
+                        break;
+                        
+                    case "fold":
+                        $module.animate({
+                            height: "50%"
+                        }, 400, function() {
+                            $(this).animate({
+                                width: 0,
+                                opacity: 0,
+                                marginLeft: "50%"
+                            }, 400, function() {
+                                $(this).remove();
+                            });
+                        });
+                        break;
+                        
+                    case "explode":
+                    default:
+                        $module.animate({
+                            opacity: 0.8,
+                            width: "150%",
+                            height: "150%",
+                            marginLeft: "-25%",
+                            marginTop: "-10%"
+                        }, 300, "easeInBack", function() {
+                            $(this).animate({
+                                opacity: 0
+                            }, 200, function() {
+                                $(this).remove();
+                            });
+                        });
+                        break;
+                }
+            });
+            
+            // Add a new module
+            $("#add-module").click(function() {
+                const moduleTypes = [
+                    {
+                        title: "Informacje",
+                        content: "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor.</p>",
+                        headerColor: "#3498db",
+                        animation: "fadeOut"
+                    },
+                    {
+                        title: "Wykres",
+                        content: '<div class="simple-chart"><div class="chart-bar" style="height:30%"></div><div class="chart-bar" style="height:65%"></div><div class="chart-bar" style="height:45%"></div><div class="chart-bar" style="height:80%"></div><div class="chart-bar" style="height:50%"></div></div>',
+                        headerColor: "#e74c3c",
+                        animation: "slideAway"
+                    },
+                    {
+                        title: "Zadania",
+                        content: '<ul class="task-list"><li><input type="checkbox"> Dokończyć raport</li><li><input type="checkbox"> Przygotować prezentację</li><li><input type="checkbox"> Spotkanie z klientem</li></ul>',
+                        headerColor: "#2ecc71",
+                        animation: "fold"
+                    },
+                    {
+                        title: "Notatka",
+                        content: '<div class="note-content"><p>Ważna informacja: spotkanie zostało przesunięte na godzinę 14:00. Proszę przygotować wszystkie materiały.</p></div>',
+                        headerColor: "#f39c12",
+                        animation: "explode"
+                    }
+                ];
+                
+                // Select random module type
+                const moduleType = moduleTypes[Math.floor(Math.random() * moduleTypes.length)];
+                
+                // Create module HTML
+                const moduleHTML = `
+                    <div class="draggable-module" style="display:none;">
+                        <div class="module-header" style="background-color: ${moduleType.headerColor}">
+                            <div class="module-drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                                <i class="module-drag-icon"></i>
+                            </div>
+                            <h3>${moduleType.title}</h3>
+                            <button class="module-remove-btn" title="Usuń moduł" data-animation="${moduleType.animation}">
+                                <i class="module-remove-icon"></i>
+                            </button>
+                        </div>
+                        <div class="module-content">
+                            ${moduleType.content}
+                        </div>
+                    </div>
+                `;
+                
+                // Append to container and show with animation
+                $("#central-modules").prepend(moduleHTML);
+                $(".draggable-module:first").slideDown(600);
+            });
+        });
+        
         // Funkcja walidująca z animacjami
         function validateForm() {
             var isValid = true;
@@ -303,22 +627,64 @@
 </head>
 <body>
     <header>Head</header>
-
-    <button id="toggleLeftPanel">Toggle Left Panel</button>
+    
+    <!-- Add customize layout button -->
+    <div class="customize-controls">
+        <button id="customizeToggle">Dostosuj układ strony</button>
+    </div>
 
     <div id="main">
-        <div id="mainLeft">
-            <input type="text" id="filterMenu" placeholder="Szukaj w menu...">
-            <nav id="mainNavMenu"> Lista:
-                <ul>
-                    <li><a href="">1</a></li>
-                    <li><a href="">2</a></li>
-                    <li><a href="">3</a></li>
-                    <li><a href="">4</a></li>
-                </ul>
-            </nav>
+        <div id="mainLeft" class="panel-container">
+            <!-- Kalendarz -->
+            <div id="calendar-module" class="sidebox">
+                <div class="drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                    <i class="drag-icon"></i>
+                </div>
+                <h3>Kalendarz</h3>
+                <div class="sidebox-content">
+                    <div id="datepicker"></div>
+                </div>
+            </div>
+            
+            <!-- Interesujące odsyłacze -->
+            <div id="links-module" class="sidebox">
+                <div class="drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                    <i class="drag-icon"></i>
+                </div>
+                <h3>Interesujące odsyłacze</h3>
+                <div class="sidebox-content">
+                    <ul class="sidebox-links">
+                        <li><a href="#"><i class="icon-link"></i>Aktualności branżowe</a></li>
+                        <li><a href="#"><i class="icon-link"></i>Najnowsze technologie</a></li>
+                        <li><a href="#"><i class="icon-link"></i>Tutoriale i dokumentacje</a></li>
+                        <li><a href="#"><i class="icon-link"></i>Forum dyskusyjne</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Ostatnie wydarzenia -->
+            <div id="events-module" class="sidebox">
+                <div class="drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                    <i class="drag-icon"></i>
+                </div>
+                <h3>Ostatnie wydarzenia</h3>
+                <div class="sidebox-content">
+                    <div class="event-item">
+                        <div class="event-date">12.05.2023</div>
+                        <div class="event-title">Konferencja technologiczna</div>
+                    </div>
+                    <div class="event-item">
+                        <div class="event-date">24.04.2023</div>
+                        <div class="event-title">Warsztaty programistyczne</div>
+                    </div>
+                    <div class="event-item">
+                        <div class="event-date">10.03.2023</div>
+                        <div class="event-title">Hackathon</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div id="mainRight">
+        <div id="mainCenter">
             
             <article class="articleBody"><p class="label">temat</p>
                 <p class="textBody">1234</p>
@@ -367,7 +733,7 @@
                     <p>Treść dla części 4.</p>
                 </div>
             </div>
-            
+
             <div id="dialog-form" title="Dodaj nowy wiersz">
                 <label>Kolumna 1: <input type="text" id="col1" class="form-input" required></label>
                 <label>Kolumna 2: <input type="text" id="col2" class="form-input" required></label>
@@ -383,6 +749,155 @@
             <div id="dialog-add-tab" title="Add New Tab">
                 <label>Tab Title: <input type="text" id="tab-title" class="form-input" required></label>
                 <label>Tab Content: <textarea id="tab-content" class="form-input" required></textarea></label>
+            </div>
+
+            <div class="module-section">
+                <h2>Moduły z możliwością przeciągania</h2>
+                <p>Możesz zmieniać układ modułów poprzez ich przeciąganie oraz usuwać je używając przycisku w prawym górnym rogu</p>
+                
+                <div class="module-controls">
+                    <button id="add-module">Dodaj nowy moduł</button>
+                </div>
+                
+                <div id="central-modules">
+                    <!-- Moduł 1 -->
+                    <div class="draggable-module">
+                        <div class="module-header" style="background-color: #3498db">
+                            <div class="module-drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                                <i class="module-drag-icon"></i>
+                            </div>
+                            <h3>Informacje</h3>
+                            <button class="module-remove-btn" title="Usuń moduł" data-animation="fadeOut">
+                                <i class="module-remove-icon"></i>
+                            </button>
+                        </div>
+                        <div class="module-content">
+                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Moduł 2 -->
+                    <div class="draggable-module">
+                        <div class="module-header" style="background-color: #e74c3c">
+                            <div class="module-drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                                <i class="module-drag-icon"></i>
+                            </div>
+                            <h3>Wykres</h3>
+                            <button class="module-remove-btn" title="Usuń moduł" data-animation="slideAway">
+                                <i class="module-remove-icon"></i>
+                            </button>
+                        </div>
+                        <div class="module-content">
+                            <div class="simple-chart">
+                                <div class="chart-bar" style="height:30%"></div>
+                                <div class="chart-bar" style="height:65%"></div>
+                                <div class="chart-bar" style="height:45%"></div>
+                                <div class="chart-bar" style="height:80%"></div>
+                                <div class="chart-bar" style="height:50%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Moduł 3 -->
+                    <div class="draggable-module">
+                        <div class="module-header" style="background-color: #2ecc71">
+                            <div class="module-drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                                <i class="module-drag-icon"></i>
+                            </div>
+                            <h3>Zadania</h3>
+                            <button class="module-remove-btn" title="Usuń moduł" data-animation="fold">
+                                <i class="module-remove-icon"></i>
+                            </button>
+                        </div>
+                        <div class="module-content">
+                            <ul class="task-list">
+                                <li><input type="checkbox"> Dokończyć raport</li>
+                                <li><input type="checkbox"> Przygotować prezentację</li>
+                                <li><input type="checkbox"> Spotkanie z klientem</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Moduł 4 -->
+                    <div class="draggable-module">
+                        <div class="module-header" style="background-color: #f39c12">
+                            <div class="module-drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                                <i class="module-drag-icon"></i>
+                            </div>
+                            <h3>Notatka</h3>
+                            <button class="module-remove-btn" title="Usuń moduł" data-animation="explode">
+                                <i class="module-remove-icon"></i>
+                            </button>
+                        </div>
+                        <div class="module-content">
+                            <div class="note-content">
+                                <p>Ważna informacja: spotkanie zostało przesunięte na godzinę 14:00. Proszę przygotować wszystkie materiały.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="mainRight" class="panel-container">
+            <!-- Aktualności -->
+            <div id="news-module" class="sidebox">
+                <div class="drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                    <i class="drag-icon"></i>
+                </div>
+                <h3>Aktualności</h3>
+                <div class="sidebox-content">
+                    <div class="news-item">
+                        <div class="news-date">15.06.2023</div>
+                        <div class="news-title">Nowe funkcje w najnowszej aktualizacji</div>
+                        <div class="news-excerpt">Najnowsza aktualizacja wprowadza wiele istotnych ulepszeń oraz poprawia stabilność systemu...</div>
+                    </div>
+                    <div class="news-item">
+                        <div class="news-date">02.06.2023</div>
+                        <div class="news-title">Wsparcie dla nowych urządzeń</div>
+                        <div class="news-excerpt">Dodaliśmy wsparcie dla najnowszych urządzeń na rynku...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Najlepiej oceniono -->
+            <div id="ratings-module" class="sidebox">
+                <div class="drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                    <i class="drag-icon"></i>
+                </div>
+                <h3>Najlepiej oceniono</h3>
+                <div class="sidebox-content">
+                    <div class="rating-item">
+                        <div class="rating-title">Moduł analityczny</div>
+                        <div class="rating-stars">★★★★★</div>
+                        <div class="rating-count">(128 ocen)</div>
+                    </div>
+                    <div class="rating-item">
+                        <div class="rating-title">System raportowania</div>
+                        <div class="rating-stars">★★★★☆</div>
+                        <div class="rating-count">(96 ocen)</div>
+                    </div>
+                    <div class="rating-item">
+                        <div class="rating-title">Panel konfiguracyjny</div>
+                        <div class="rating-stars">★★★★☆</div>
+                        <div class="rating-count">(84 ocen)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cycler ze zdjęciami -->
+            <div id="gallery-module" class="sidebox">
+                <div class="drag-handle" title="Przeciągnij, aby zmienić pozycję">
+                    <i class="drag-icon"></i>
+                </div>
+                <h3>Galeria</h3>
+                <div class="sidebox-content">
+                    <div id="cycler">
+                        <img src="https://via.placeholder.com/210x140/3498db/ffffff?text=Zdjęcie+1" class="active" alt="Zdjęcie 1">
+                        <img src="https://via.placeholder.com/210x140/e74c3c/ffffff?text=Zdjęcie+2" alt="Zdjęcie 2">
+                        <img src="https://via.placeholder.com/210x140/2ecc71/ffffff?text=Zdjęcie+3" alt="Zdjęcie 3">
+                        <img src="https://via.placeholder.com/210x140/f39c12/ffffff?text=Zdjęcie+4" alt="Zdjęcie 4">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
