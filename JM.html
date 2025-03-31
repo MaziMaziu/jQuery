@@ -9,51 +9,6 @@
     <!-- Dodajemy bibliotekę touch-punch aby sortowanie działało również na urządzeniach dotykowych -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
     <title>Jakub Mazela</title>
-    <style>
-        /* Dodajemy styl dla sortowanych zakładek */
-        #tabs-accordion .ui-tabs-nav {
-            cursor: move;
-        }
-        
-        /* Zmiana kursora na "grab" dla poszczególnych zakładek */
-        #tabs-accordion .ui-tabs-nav li {
-            cursor: grab;
-        }
-        
-        /* Zmiana kursora na "grabbing" podczas przeciągania */
-        #tabs-accordion .ui-tabs-nav li.ui-sortable-helper {
-            cursor: grabbing;
-        }
-        
-        /* Style do animacji formularzy */
-        #dialog-form input[type="text"], 
-        #dialog-form textarea {
-            border: 1px solid #ccc;
-            transition: border-color 0.3s, background-color 0.3s;
-            padding: 8px;
-            border-radius: 4px;
-        }
-
-        /* Styl dla grupy radiobuttons */
-        #radio-group {
-            padding: 10px;
-            border-radius: 4px;
-            transition: border-color 0.7s, background-color 0.7s;
-            margin: 10px 0;
-        }
-
-        /* Styl dla błędnego pola */
-        .input-error {
-            border: 2px solid red !important;
-            background-color: #FFE0E0 !important;
-        }
-
-        /* Styl dla poprawnego pola */
-        .input-success {
-            border: 2px solid green !important;
-            background-color: #E0FFE0 !important;
-        }
-    </style>
     <script>
         $(function() {
             // Zmodyfikowana animacja dla widgetu Accordion
@@ -544,7 +499,178 @@
                 $("#central-modules").prepend(moduleHTML);
                 $(".draggable-module:first").slideDown(600);
             });
+
+            // Initialize the zebra-stripe checkboxradio
+            $("#zebra-toggle").checkboxradio({
+                icon: false
+            });
+            
+            // Handle zebra stripe toggling with animation
+            $("#zebra-toggle").change(function() {
+                if (this.checked) {
+                    // Add zebra striping with animation
+                    $("#data-table tbody tr:even").each(function(i) {
+                        $(this).delay(i * 100).animate({
+                            backgroundColor: "#f2f2f2"
+                        }, 500);
+                    });
+                } else {
+                    // Remove zebra striping with animation
+                    $("#data-table tbody tr:even").each(function(i) {
+                        $(this).delay(i * 100).animate({
+                            backgroundColor: "#ecf0f1"
+                        }, 500);
+                    });
+                }
+            });
+
+            // Add a test row to make sure table works
+            $("#data-table tbody").append("<tr><td>Test</td><td>Test</td><td>Test</td><td>Test</td></tr>");
+            console.log("Test row added");
+            
+            // Clear any existing handlers to avoid conflicts
+            $("#save-row").off("click");
+            
+            try {
+                // Try to destroy existing dialog if it was already initialized
+                $("#dialog-form").dialog("destroy"); 
+            } catch(e) {
+                // Ignore error if dialog wasn't initialized
+            }
+            
+            // Initialize dialog with proper settings
+            $("#dialog-form").dialog({ 
+                autoOpen: false, 
+                modal: true, 
+                width: 400,
+                hide: { effect: "explode", duration: 500 },
+                show: { effect: "explode", duration: 500 }
+            });
+            
+            // Add a visible test row to confirm table works
+            $("#data-table tbody").html("<tr><td>Test Data</td><td>Test Data</td><td>Test Data</td><td>Test Option</td></tr>");
+            console.log("Test row added to table");
+            
+            // Simple click handler for add-row button
+            $("#add-row").click(function() {
+                console.log("Add row button clicked");
+                resetFormStyles();
+                $("#dialog-form").dialog("open");
+            });
+            
+            // Direct, simple handler for save button
+            $("#save-row").on("click", function() {
+                console.log("Save button clicked");
+                
+                // Check for required fields being filled
+                var isValid = true;
+                var col1 = $("#col1").val();
+                var col2 = $("#col2").val();
+                var col3 = $("#col3").val();
+                
+                if (!col1 || !col2 || !col3) {
+                    isValid = false;
+                    alert("Please fill in all required fields");
+                    console.log("Validation failed: empty fields");
+                }
+                
+                if (!$("input[name='radio']:checked").length) {
+                    isValid = false;
+                    alert("Please select an option");
+                    console.log("Validation failed: no radio selected");
+                }
+                
+                if (isValid) {
+                    console.log("Form is valid, adding row");
+                    
+                    // Get the selected option text
+                    var selectedOption = $("input[name='radio']:checked").next("label").text();
+                    
+                    // Create simple string for new row
+                    var newRow = "<tr><td>" + col1 + "</td><td>" + col2 + "</td><td>" + col3 + 
+                        "</td><td>" + selectedOption + "</td></tr>";
+                    
+                    // Add to table using direct jQuery append
+                    $("#data-table tbody").append(newRow);
+                    console.log("Row added successfully");
+                    
+                    // Close dialog and reset the form
+                    $("#dialog-form").dialog("close");
+                    resetFormStyles();
+                    
+                    // Confirm to user
+                    alert("Row added successfully!");
+                }
+            });
+            
+            // Enhanced row insertion with animation (task 7)
+            $("#save-row").on("click", function() {
+                console.log("Save button clicked");
+                
+                if (validateForm()) {
+                    var col1 = $("#col1").val();
+                    var col2 = $("#col2").val();
+                    var col3 = $("#col3").val();
+                    var selectedOption = $("input[name='radio']:checked").next("label").text();
+                    
+                    // Create new row with hidden state for animation
+                    var $newRow = $("<tr style='display:none'></tr>");
+                    $newRow.append("<td>" + col1 + "</td>");
+                    $newRow.append("<td>" + col2 + "</td>");
+                    $newRow.append("<td>" + col3 + "</td>");
+                    $newRow.append("<td>" + selectedOption + "</td>");
+                    
+                    // Add the row to table
+                    $("#data-table tbody").append($newRow);
+                    
+                    // Sequence of animations for smooth appearance
+                    $newRow.fadeIn(400)                        // Fade in
+                        .css({backgroundColor: "#d4efdf"})      // Start with highlight color
+                        .animate({backgroundColor: "#ffffff"}, 1500, function() { // Fade to normal
+                            $(this).css("backgroundColor", "");  // Reset to default
+                        });
+                    
+                    // Close dialog and reset form
+                    $("#dialog-form").dialog("close");
+                    resetFormStyles();
+                    
+                    console.log("Row added successfully with animation");
+                }
+            });
+            
         });
+
+        // Keep just one validateForm function - make it simple and reliable
+        function validateForm() {
+            var isValid = true;
+            
+            // Check each form input
+            $(".form-input").each(function() {
+                if ($(this).val() === "") {
+                    isValid = false;
+                    $(this).css({
+                        "border": "2px solid red",
+                        "background-color": "#FFE0E0"
+                    });
+                } else {
+                    $(this).css({
+                        "border": "2px solid green",
+                        "background-color": "#E0FFE0"
+                    });
+                }
+            });
+            
+            // Check radio buttons
+            if (!$("input[name='radio']:checked").length) {
+                isValid = false;
+                $("#radio-group").css("border", "2px solid red");
+                alert("Proszę wybrać jedną z opcji");
+            } else {
+                $("#radio-group").css("border", "2px solid green");
+            }
+            
+            return isValid;
+        }
         
         // Funkcja walidująca z animacjami
         function validateForm() {
@@ -701,7 +827,13 @@
                             <li><a href="#tabs-accordion-1">Tabela</a></li>
                             <li><a href="#tabs-accordion-2">Sterowanie</a></li>
                         </ul>
-                        <button id="add-tab">Add New Tab</button> <!-- Przycisk obok widgetu Tabs -->
+                        <div class="tab-controls">
+                            <button id="add-tab">Add New Tab</button>
+                            <div class="zebra-toggle-container">
+                                <input type="checkbox" id="zebra-toggle" name="zebra-toggle">
+                                <label for="zebra-toggle">Zebra Stripes</label>
+                            </div>
+                        </div>
                         <div id="tabs-accordion-1">
                             <table id="data-table" border="1">
                                 <thead>

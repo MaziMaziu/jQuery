@@ -154,6 +154,21 @@ footer {
     border-bottom: 1px solid #fff;
 }
 
+/* Styles for sortable tabs */
+#tabs-accordion .ui-tabs-nav {
+    cursor: move;
+}
+
+/* "Grab" cursor for individual tabs */
+#tabs-accordion .ui-tabs-nav li {
+    cursor: grab;
+}
+
+/* "Grabbing" cursor during drag */
+#tabs-accordion .ui-tabs-nav li.ui-sortable-helper {
+    cursor: grabbing;
+}
+
 /* Table styling */
 #data-table {
     width: 100%;
@@ -168,6 +183,8 @@ footer {
     border: 1px solid #ccc;
     text-align: left;
     background-color: #ecf0f1;
+    transition: background-color 0.5s ease, color 0.5s ease, border 0.5s ease;
+    box-sizing: border-box; /* Ensures border changes don't resize cells */
 }
 
 #data-table th {
@@ -177,6 +194,27 @@ footer {
 
 #data-table tr:nth-child(even) {
     background-color: #f2f2f2;
+}
+
+/* Animation for odd rows on hover */
+#data-table tbody tr:nth-child(odd):hover td {
+    background-color: #d6eaf8; /* Light blue */
+    color: #2874a6; /* Darker blue */
+    border: 2px solid #3498db; /* Medium blue border */
+    padding: 9px; /* Adjust padding to maintain row height when border increases */
+}
+
+/* Animation for even rows on hover */
+#data-table tbody tr:nth-child(even):hover td {
+    background-color: #fdebd0; /* Light orange */
+    color: #b9770e; /* Darker orange */
+    border: 2px solid #f39c12; /* Medium orange border */
+    padding: 9px; /* Adjust padding to maintain row height when border increases */
+}
+
+/* Ensure row transitions are smooth */
+#data-table tbody tr {
+    transition: background-color 0.5s ease;
 }
 
 #add-row {
@@ -214,6 +252,35 @@ footer {
     border-radius: 4px;
     margin-bottom: 10px;
     transition: border-color 0.3s, background-color 0.3s;
+}
+
+/* Form animation styles */
+#dialog-form input[type="text"], 
+#dialog-form textarea {
+    border: 1px solid #ccc;
+    transition: border-color 0.3s, background-color 0.3s;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+/* Radio buttons group style */
+#radio-group {
+    padding: 10px;
+    border-radius: 4px;
+    transition: border-color 0.7s, background-color 0.7s;
+    margin: 10px 0;
+}
+
+/* Error field style */
+.input-error {
+    border: 2px solid red !important;
+    background-color: #FFE0E0 !important;
+}
+
+/* Success field style */
+.input-success {
+    border: 2px solid green !important;
+    background-color: #E0FFE0 !important;
 }
 
 #radio-group {
@@ -754,5 +821,46 @@ footer {
     padding: 15px;
     border-left: 4px solid #f39c12;
     font-style: italic;
+}
+
+/* Tab controls container styling */
+.tab-controls {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    gap: 15px;
+}
+
+/* Style for the zebra toggle container */
+.zebra-toggle-container {
+    display: inline-flex;
+    align-items: center;
+}
+
+.zebra-toggle-container label {
+    margin-left: 5px;
+    font-size: 14px;
+}
+
+/* Table row insertion animation styles */
+@keyframes rowHighlight {
+    0% { background-color: #d4efdf; }
+    100% { background-color: transparent; }
+}
+
+#data-table tbody tr.new-row {
+    animation: rowHighlight 2s ease-in-out;
+}
+
+/* Row hover animations improved */
+#data-table tbody tr {
+    transition: all 0.5s ease;
+}
+
+#data-table tbody tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    z-index: 5;
+    position: relative;
 }
 
